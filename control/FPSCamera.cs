@@ -12,6 +12,18 @@ public class FPSCamera : MonoBehaviour
     public float ySpeed=5f;
     public float yAngleMinLimit=-50f;
     public float yAngleMaxLimit=50f;
+
+    public bool isShooting;
+    private bool ifRecover;
+    private bool ifMark;
+    public float recoilUp;
+    public float recoilHorizontal;
+    public float recoverSpeed=2f;
+    private Vector3 pre_angles;
+    private float deltaUp;
+    private float deltaHorizontal;
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -19,6 +31,7 @@ public class FPSCamera : MonoBehaviour
         {
             UnityEngine.Debug.Log("未绑定人物模型");
         }
+        
     }
     void LateUpdate()
     {
@@ -27,6 +40,57 @@ public class FPSCamera : MonoBehaviour
         cameraRotation.x-=MouseY*ySpeed;
         cameraRotation.x=ClampAngle(cameraRotation.x,yAngleMinLimit,yAngleMaxLimit);
         characterBodyRotation.y+=MouseX*xSpeed;
+
+        if(MouseX!=0||MouseY!=0)
+        {
+            ifRecover=false;
+        }
+        if(isShooting)
+        {
+            ifRecover=true;
+            ifMark=false;
+            cameraRotation.x-=recoilUp;
+            characterBodyRotation.y+=Random.Range(-recoilHorizontal,recoilHorizontal);
+        }
+        else
+        {
+            if(ifRecover)
+            {
+                if(!ifMark)
+                {
+                    //欧拉角为负数时会+360存储    -60~0  360~300
+                    if(transform.eulerAngles.x>200f)
+                    {
+                        deltaUp=transform.eulerAngles.x-360f-pre_angles.x;
+                    }
+                    else
+                    {
+                        deltaUp=transform.eulerAngles.x-pre_angles.x;
+                    } 
+                    deltaHorizontal=transform.eulerAngles.y-pre_angles.y;
+                    // 0~360 去除分界点情况
+                    if(deltaHorizontal>30f)
+                    {
+                        deltaHorizontal-=360f;
+                    }
+                    else if(deltaHorizontal<-30f)
+                    {
+                        deltaHorizontal+=360f;
+                    }
+
+                    ifMark=true;
+                }
+                if(Mathf.Abs(transform.eulerAngles.x-pre_angles.x)>(-deltaUp/10))
+                {
+                    cameraRotation.x-=deltaUp*Time.deltaTime*recoverSpeed;
+                    characterBodyRotation.y-=deltaHorizontal*Time.deltaTime*recoverSpeed;  
+                }         
+            }
+            else
+            {
+                pre_angles=transform.eulerAngles;
+            }   
+        }
 
         characterBodyTransform.rotation=Quaternion.Euler(0,characterBodyRotation.y,0);
         transform.rotation=Quaternion.Euler(cameraRotation.x,characterBodyRotation.y,0); 
@@ -38,5 +102,5 @@ public class FPSCamera : MonoBehaviour
         if(angle>360)
             angle-=360;
         return Mathf.Clamp(angle,min,max);
-    }
+    } 
 }
