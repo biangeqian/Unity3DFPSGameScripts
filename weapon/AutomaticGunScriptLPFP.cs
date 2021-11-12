@@ -9,6 +9,7 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 
 	[Header("Gun Camera")]
 	//Main gun camera
+	public FPSCamera cameraScript;
 	public Camera gunCamera;
 
 	[Header("Gun Camera Options")]
@@ -781,9 +782,15 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 				Instantiate (Prefabs.casingPrefab, 
 					Spawnpoints.casingSpawnPoint.transform.position, 
 					Spawnpoints.casingSpawnPoint.transform.rotation);
+				
 			}
+			cameraScript.isShooting=true;		
 		}
-
+		else
+		{
+			cameraScript.isShooting=false;
+		}
+	
 		//Inspect weapon when T key is pressed
 		// if (Input.GetKeyDown (KeyCode.T)) 
 		// {
