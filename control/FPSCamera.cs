@@ -17,6 +17,7 @@ public class FPSCamera : MonoBehaviour
     private bool ifRecover;
     private bool ifMark;
     public float recoilUp;
+    private float tmp_recoilUp;
     public float recoilHorizontal;
     public float recoverSpeed=2f;
     private Vector3 pre_angles;
@@ -31,7 +32,7 @@ public class FPSCamera : MonoBehaviour
         {
             UnityEngine.Debug.Log("未绑定人物模型");
         }
-        
+        tmp_recoilUp=recoilUp;
     }
     void LateUpdate()
     {
@@ -47,26 +48,28 @@ public class FPSCamera : MonoBehaviour
         }
         if(isShooting)
         {
-            ifRecover=true;
+            if(MouseX!=0||MouseY!=0)
+            {
+                pre_angles=transform.eulerAngles;
+            }
+            else
+            {
+                ifRecover=true;
+            }
             ifMark=false;
-            cameraRotation.x-=recoilUp;
+            cameraRotation.x-=tmp_recoilUp;
+            tmp_recoilUp*=0.995f;
             characterBodyRotation.y+=Random.Range(-recoilHorizontal,recoilHorizontal);
         }
         else
         {
+            tmp_recoilUp=recoilUp;
             if(ifRecover)
             {
                 if(!ifMark)
                 {
-                    //欧拉角为负数时会+360存储    -60~0  360~300
-                    if(transform.eulerAngles.x>200f)
-                    {
-                        deltaUp=transform.eulerAngles.x-360f-pre_angles.x;
-                    }
-                    else
-                    {
-                        deltaUp=transform.eulerAngles.x-pre_angles.x;
-                    } 
+                    deltaUp=FixAngle(transform.eulerAngles.x)-FixAngle(pre_angles.x);
+                    
                     deltaHorizontal=transform.eulerAngles.y-pre_angles.y;
                     // 0~360 去除分界点情况
                     if(deltaHorizontal>30f)
@@ -80,6 +83,7 @@ public class FPSCamera : MonoBehaviour
 
                     ifMark=true;
                 }
+                
                 if(Mathf.Abs(transform.eulerAngles.x-pre_angles.x)>(-deltaUp/10))
                 {
                     cameraRotation.x-=deltaUp*Time.deltaTime*recoverSpeed;
@@ -103,4 +107,10 @@ public class FPSCamera : MonoBehaviour
             angle-=360;
         return Mathf.Clamp(angle,min,max);
     } 
+    //欧拉角为负数时会+360存储    -60~0  360~300
+    static float FixAngle(float angle)
+    {
+        if(angle>100f) return angle-360f;
+        else return angle;
+    }
 }
