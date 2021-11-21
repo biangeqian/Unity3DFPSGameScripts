@@ -11,6 +11,7 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 	//Main gun camera
 	public FPSCamera cameraScript;
 	public Camera gunCamera;
+	public Camera sceneCamera;
 
 	[Header("Gun Camera Options")]
 	//How fast the camera field of view changes when aiming 
@@ -18,7 +19,9 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 	public float fovSpeed = 15.0f;
 	//Default camera field of view
 	[Tooltip("Default value for camera field of view (40 is recommended).")]
-	public float defaultFov = 40.0f;
+	public float defaultGunFov = 40.0f;
+	public float defaultSceneFov=55.0f;
+
 
 	[Header("UI Weapon Name")]
 	[Tooltip("Name of the current weapon, shown in the game UI.")]
@@ -35,6 +38,8 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 	//Scope 01 camera fov
 	[Range(5, 40)]
 	public float scope1AimFOV = 10;
+	[Range(5, 55)]
+	public float scope1SceneFOV = 50;
 	[Space(10)]
 	//Toggle scope 02
 	public bool scope2;
@@ -43,6 +48,8 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 	//Scope 02 camera fov
 	[Range(5, 40)]
 	public float scope2AimFOV = 25;
+	[Range(5, 55)]
+	public float scope2SceneFOV = 50;
 	[Space(10)]
 	//Toggle scope 03
 	public bool scope3;
@@ -51,6 +58,8 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 	//Scope 03 camera fov
 	[Range(5, 40)]
 	public float scope3AimFOV = 20;
+	[Range(5, 55)]
+	public float scope3SceneFOV = 50;
 	[Space(10)]
 	//Toggle scope 04
 	public bool scope4;
@@ -59,6 +68,8 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 	//Scope 04 camera fov
 	[Range(5, 40)]
 	public float scope4AimFOV = 12;
+	[Range(5, 55)]
+	public float scope4SceneFOV = 50;
 	[Space(10)]
 
 	//Toggle iron sights
@@ -67,6 +78,8 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 	//Iron sights camera fov
 	[Range(5, 40)]
 	public float ironSightsAimFOV = 16;
+	[Range(5, 55)]
+	public float ironSightsSceneFOV = 50;
 	[Space(10)]
 
 	//Toggle silencer
@@ -128,7 +141,7 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 	private bool isReloading;
 
 	//Holstering weapon
-	private bool hasBeenHolstered = false;
+	private bool waitAnim = false;
 	//If weapon is holstered
 	private bool holstered;
 	//Check if running
@@ -424,32 +437,43 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 
 		//Aiming
 		//Toggle camera FOV when right click is held down
-		if(Input.GetButton("Fire2") && !isReloading && !isRunning && !isInspecting) 
+		if(Input.GetButton("Fire2") && !isReloading && !isRunning && !isInspecting&&!holstered&&!waitAnim) 
 		{
 			if (ironSights == true) 
 			{
 				gunCamera.fieldOfView = Mathf.Lerp (gunCamera.fieldOfView,
 					ironSightsAimFOV, fovSpeed * Time.deltaTime);
+
+				sceneCamera.fieldOfView=Mathf.Lerp(sceneCamera.fieldOfView,
+					ironSightsSceneFOV, fovSpeed*Time.deltaTime);
 			}
 			if (scope1 == true) 
 			{
 				gunCamera.fieldOfView = Mathf.Lerp (gunCamera.fieldOfView,
 					scope1AimFOV, fovSpeed * Time.deltaTime);
+				sceneCamera.fieldOfView=Mathf.Lerp(sceneCamera.fieldOfView,
+					scope1SceneFOV, fovSpeed*Time.deltaTime);
 			}
 			if (scope2 == true) 
 			{
 				gunCamera.fieldOfView = Mathf.Lerp (gunCamera.fieldOfView,
 					scope2AimFOV, fovSpeed * Time.deltaTime);
+				sceneCamera.fieldOfView=Mathf.Lerp(sceneCamera.fieldOfView,
+					scope2SceneFOV, fovSpeed*Time.deltaTime);
 			}
 			if (scope3 == true) 
 			{
 				gunCamera.fieldOfView = Mathf.Lerp (gunCamera.fieldOfView,
 					scope3AimFOV, fovSpeed * Time.deltaTime);
+				sceneCamera.fieldOfView=Mathf.Lerp(sceneCamera.fieldOfView,
+					scope3SceneFOV, fovSpeed*Time.deltaTime);
 			}
 			if (scope4 == true) 
 			{
 				gunCamera.fieldOfView = Mathf.Lerp (gunCamera.fieldOfView,
 					scope4AimFOV, fovSpeed * Time.deltaTime);
+				sceneCamera.fieldOfView=Mathf.Lerp(sceneCamera.fieldOfView,
+					scope4SceneFOV, fovSpeed*Time.deltaTime);
 			}
 			
 			isAiming = true;
@@ -517,7 +541,9 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 		{
 			//When right click is released
 			gunCamera.fieldOfView = Mathf.Lerp(gunCamera.fieldOfView,
-				defaultFov,fovSpeed * Time.deltaTime);
+				defaultGunFov,fovSpeed * Time.deltaTime);
+			sceneCamera.fieldOfView = Mathf.Lerp(sceneCamera.fieldOfView,
+				defaultSceneFov,fovSpeed * Time.deltaTime);
 
 			isAiming = false;
 
@@ -634,13 +660,14 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 		// }
 			
 		//Throw grenade when pressing G key
-		if (Input.GetKeyDown (KeyCode.G) && !isInspecting) 
+		if (Input.GetKeyDown (KeyCode.G) && !isInspecting&&!isReloading&&!waitAnim) 
 		{
 			mainAudioSource.clip = SoundClips.grenadeThrow;
 			mainAudioSource.Play ();
 			StartCoroutine (GrenadeSpawnDelay ());
 			//Play grenade throw animation
 			anim.Play("GrenadeThrow", 0, 0.0f);
+			holstered=false;
 		}
 
 		//If out of ammo
@@ -667,7 +694,7 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 			
 		//AUtomatic fire
 		//Left click hold 
-		if (Input.GetMouseButton (0) && !outOfAmmo && !isReloading && !isInspecting && !isRunning) 
+		if (Input.GetMouseButton (0) && !outOfAmmo && !isReloading && !isInspecting && !isRunning&&!holstered&&!waitAnim) 
 		{
 			//Shoot automatic
 			if (Time.time - lastFired > 1 / fireRate) 
@@ -792,29 +819,25 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 		}
 	
 		//Inspect weapon when T key is pressed
-		// if (Input.GetKeyDown (KeyCode.T)) 
-		// {
-		// 	anim.SetTrigger ("Inspect");
-		// }
+		if (Input.GetKeyDown (KeyCode.T)&&!holstered&&!waitAnim&&!isReloading&&!isInspecting&&!isRunning) 
+		{
+			anim.Play("Inspect");
+		}
 
 		//Toggle weapon holster when E key is pressed
-		if (Input.GetKeyDown (KeyCode.E) && !hasBeenHolstered) 
+		if (Input.GetKeyDown (KeyCode.E) &&!holstered &&!waitAnim&&!isInspecting) 
 		{
 			holstered = true;
 
 			mainAudioSource.clip = SoundClips.holsterSound;
-			mainAudioSource.Play();
-
-			hasBeenHolstered = true;
+			mainAudioSource.Play();			
 		} 
-		else if (Input.GetKeyDown (KeyCode.E) && hasBeenHolstered) 
+		else if (Input.GetKeyDown (KeyCode.E) &&holstered &&!waitAnim&&!isInspecting) 
 		{
 			holstered = false;
 
 			mainAudioSource.clip = SoundClips.takeOutSound;
-			mainAudioSource.Play ();
-
-			hasBeenHolstered = false;
+			mainAudioSource.Play ();			
 		}
 		//Holster anim toggle
 		if (holstered == true) 
@@ -827,7 +850,7 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 		}
 
 		//Reload 
-		if (Input.GetKeyDown (KeyCode.R) && !isReloading && !isInspecting) 
+		if (Input.GetKeyDown (KeyCode.R) && !isReloading && !isInspecting&&!waitAnim&&!holstered) 
 		{
 			//Reload
 			Reload ();
@@ -980,6 +1003,17 @@ public class AutomaticGunScriptLPFP : MonoBehaviour {
 		else 
 		{
 			isInspecting = false;
+		}
+		
+		//Check if has been holstered
+		if (anim.GetCurrentAnimatorStateInfo (0).IsName ("Draw")||
+			anim.GetCurrentAnimatorStateInfo (0).IsName ("GrenadeThrow")) 
+		{
+			waitAnim = true;
+		} 
+		else 
+		{
+			waitAnim = false;
 		}
 	}
 }
